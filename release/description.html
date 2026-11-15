@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><title>BestAutoAccept 0.9.4</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:820px;margin:32px auto;padding:0 20px;line-height:1.5;color:#222}
+<html lang="ru"><head><meta charset="utf-8"><title>BestAutoAccept 0.10.1</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:820px;margin:32px auto;padding:0 20px;line-height:1.5;color:#222}
 h1{font-size:26px;margin-bottom:4px}h2{font-size:20px;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:4px}h3{font-size:16px;margin-top:20px}
 table{border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;vertical-align:top}th{background:#f3f3f3}
 code{background:#f3f3f3;padding:1px 4px;border-radius:3px;font-family:Consolas,monospace;font-size:13px}hr{border:0;border-top:1px solid #e5e5e5;margin:24px 0}</style></head>
 <body>
-<h1>BestAutoAccept 0.9.4 (бета)</h1>
+<h1>BestAutoAccept 0.10.1 (бета)</h1>
 <p><strong>Автор:</strong> NoMercy</p>
 <p>Выполняет короткие команды из личных сообщений и сам принимает приглашения. Замена PartyManager.</p>
 <hr />
@@ -28,7 +28,8 @@ code{background:#f3f3f3;padding:1px 4px;border-radius:3px;font-family:Consolas,m
 <li>предложение обмена: аддон отправляет встречное предложение;</li>
 <li>транспорт: место пассажира;</li>
 <li>«На ручки!»;</li>
-<li>воскрешение от игрока.</li>
+<li>воскрешение от игрока;</li>
+<li>проверка готовности: аддон отвечает «готов» сразу или с задержкой от 0 до 30 секунд.</li>
 </ul>
 <h2>На кого реагируем</h2>
 <p>Все / Друзья / Согильдейцы. «Друзья» и «Согильдейцы» можно включить вместе. Чёрный список (кнопка с шестерёнкой): на персонажей из него аддон не реагирует никогда.</p>
@@ -47,13 +48,13 @@ code{background:#f3f3f3;padding:1px 4px;border-radius:3px;font-family:Consolas,m
 <li><code>&gt;&gt;</code>: выбрать игрока целью аддон может только по клику, поэтому, если игрок ещё не в цели, появляется кнопка «Следовать» — нажмите её.</li>
 <li>Транспорт и «На ручки!» узнаются по тексту вопроса в русском клиенте.</li>
 <li>Телепорт в сражение из очереди принять нельзя: игра закрыла эту функцию.</li>
+<li>Проверка готовности: окно игры с вопросом аддон закрывает примерно через секунду после ответа — вместе с ним закрываются и другие открытые в этот момент окна-вопросы игры.</li>
 </ul>
 <hr />
-<h2>Что нового в 0.9.4</h2>
+<h2>Что нового в 0.10.1</h2>
 <ul>
-<li>Код переписан без перехвата ошибок (<code>pcall</code>): вместо него — проверки перед каждым вызовом игры, как описано в документации API.</li>
-<li>Из аддона убраны отладочный режим и калибровка лички.</li>
-<li><code>&gt;&gt;</code>: если игрок ещё не в цели, сразу появляется кнопка «Следовать».</li>
-<li>Имя аддона в менеджере дополнений — с версией.</li>
+<li>Новое автопринятие «Проверка готовности»: аддон сам отвечает «готов», когда проверку запускает другой игрок. Можно задать задержку ответа от 0 до 30 секунд.</li>
+<li>После ответа аддон закрывает окно игры «Проверка готовности».</li>
+<li>Если вы успели ответить сами, аддон ваш ответ не меняет.</li>
 </ul>
 </body></html>
