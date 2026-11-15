@@ -1,9 +1,9 @@
 # BestAutoAccept: исследование Lua API Аллодов Онлайн
 
 Источники:
-- **[D]** локальная официальная документация `/home/claude/baa/src/ModdingDocuments/` (версия 17.0.00). Пути ниже даны относительно `ModdingDocuments/LuaApi/`, если не указано иное.
+- **[D]** локальная официальная документация `<папка игры>\data\Mods\Docs\ModdingDocuments\` (версия 17.0.00). Пути ниже даны относительно `ModdingDocuments/LuaApi/`, если не указано иное.
 - **[CL]** история изменений `ModdingDocuments/Changes/ChangelistX_Y_ZZ.html`.
-- **[RPL]** наш проверенный в игре аддон `/home/claude/baa/src/RaidPartyLeader/Scripts/*.lua` (файлы в Windows-1251).
+- **[RPL]** наш проверенный в игре аддон RaidPartyLeader (`Scripts/*.lua`) (файлы в Windows-1251).
 - **[PM]** тексты чужого аддона `PartyManager/Texts/*.txt` (UTF-16LE). По ним видно только, что он умеет; сам код я не смотрел.
 - **[WEB]** alloder.pro: онлайн-документация (`https://alloder.pro/md/...`, версия 17.1) и форум.
 

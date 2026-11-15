@@ -144,11 +144,11 @@ ICON_PATHS = {
     'x': (['M4 4l8 8M12 4l-8 8'], 1.9),
     'group': (['M3.5 5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0M1.5 14c0-2.8 2-4.5 4.5-4.5s4.5 1.7 4.5 4.5M9.8 3.2a2 2 0 1 1 1.4 3.6M11.5 9.6c1.9.3 3 1.8 3 4.4'], 1.5),
     'activity': (['M3.5 15V2M3.5 2.5h9l-2 3 2 3h-9'], 1.5),
-    'trade': (['M2 5h11M10 2l3 3-3 3M14 11H3M6 8l-3 3 3 3'], 1.5),
     'vehicle': (['M0.8 11.6a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M10 11.6a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M3.4 11.6L5.2 8.6M12.6 11.6L10.6 5.2h2'], 1.5,
                 ['M4.6 8.9L6.4 6.6h2.2l0.8 1.2h1.6l0.9 1.6l-1.4 2.6h-3.4z']),
     'carry': (['M4.5 9V5a1 1 0 0 1 2 0v3.5M6.5 8V3.5a1 1 0 0 1 2 0V8M8.5 8V4.5a1 1 0 0 1 2 0V8.5M10.5 8.5V6a1 1 0 0 1 2 0v4c0 2.5-1.8 4.5-4.3 4.5H7.5c-1.5 0-2.4-.6-3.3-1.6L2 10.5a1 1 0 0 1 1.5-1.3L4.5 10'], 1.5),
     'res': (['M8 1v14M6 3.5h4M3.5 6.5h9M5.5 10.5l5 2'], 1.6),
+    'ready': (['M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0M5.2 8.3l2 2 3.7-4.2'], 1.6),
 }
 
 
@@ -167,7 +167,7 @@ def icon_tex(name, kind, color, key=None, size=32):
     return X.stretch(name, img)
 
 
-ACC_KEYS = ['group', 'activity', 'trade', 'vehicle', 'carry', 'res']
+ACC_KEYS = ['group', 'activity', 'vehicle', 'carry', 'res', 'ready']
 for k in ACC_KEYS:
     icon_tex('Acc_%s_On' % k, k, ACC_I, 'ACC_%s_ON' % k.upper())
     icon_tex('Acc_%s_Off' % k, k, TXT_DIS, 'ACC_%s_OFF' % k.upper())
@@ -333,11 +333,20 @@ X.panel('AccIcon', PL(P(12), (AH - P(16)) // 2, P(16), P(16)), back='Textures/Ac
 tv('AccName', P(38), 0, P(260), AH, '../Texts/RowName.txt', transparent=False, pointing='baa_tip')
 acc_sw = [dict(v, reaction='baa_acc_switch') for v in sw_vars]
 X.button('AccSwitch', PL(WW - P(12) - 40, (AH - 20) // 2, 40, 20), acc_sw)
+# строка с задержкой ответа (проверка готовности): то же поле, что у команд, слева от переключателя
+ACC_CD_X = WW - P(12) - 40 - P(10) - BW
+tv('AccName', P(38), 0, ACC_CD_X - P(38) - P(6), AH, '../Texts/RowName.txt', transparent=False, pointing='baa_tip', fname='AccNameCd')
+X.panel('CdBox', PL(ACC_CD_X, (AH - BH) // 2, BW, BH), back=FIELD,
+        children=['CdFocus.(WidgetPanel).xdb', 'CdMinus.(WidgetButton).xdb', 'CdSep1.(WidgetPanel).xdb', 'CdEdit.(WidgetEditLine).xdb',
+                  'CdUnit.(WidgetTextView).xdb', 'CdSep2.(WidgetPanel).xdb', 'CdPlus.(WidgetButton).xdb'],
+        wheel=('baa_cd_up', 'baa_cd_down'), pointing='baa_tip', fname='AccCdBox')
+ACC_WITH_CD = {5}
 acc_rows = []
-for i in range(6):
-    acc_rows.append(X.panel('AccRow%d' % (i + 1), PL(0, Y(366 + 28 * i), WW, AH),
-                            children=['AccIcon.(WidgetPanel).xdb', 'AccName.(WidgetTextView).xdb', 'AccSwitch.(WidgetButton).xdb'],
-                            pick_children=True))
+for i in range(len(ACC_KEYS)):
+    kids = ['AccIcon.(WidgetPanel).xdb', 'AccName.(WidgetTextView).xdb', 'AccSwitch.(WidgetButton).xdb']
+    if i in ACC_WITH_CD:
+        kids = ['AccIcon.(WidgetPanel).xdb', 'AccNameCd.(WidgetTextView).xdb', 'AccCdBox.(WidgetPanel).xdb', 'AccSwitch.(WidgetButton).xdb']
+    acc_rows.append(X.panel('AccRow%d' % (i + 1), PL(0, Y(366 + 28 * i), WW, AH), children=kids, pick_children=True))
 
 X.panel('MainPage', PL(0, P(HDR), WW, WH - P(HDR)),
         children=['WhoTitle.(WidgetTextView).xdb'] + seg_children + ['Line1.(WidgetPanel).xdb', 'CmdTitle.(WidgetTextView).xdb',

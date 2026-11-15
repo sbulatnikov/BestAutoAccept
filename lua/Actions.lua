@@ -181,6 +181,10 @@ end
 
 -- Задержка: команда выполняется через N секунд после сообщения (0 — сразу).
 -- Пока команда ждёт, такая же от того же игрока не ставится второй раз.
+local readyWait = nil   -- { due, name }: ждём задержку перед ответом на проверку готовности
+local ReadyAnswer       -- определена ниже, в блоке автопринятия
+local readyClose = nil  -- секунда, в которую закрываем окно игры «Проверка готовности»
+local CloseGameBoxes    -- определена ниже, в блоке автопринятия
 local waiting = {}   -- [команда:ник] = { cmd, name, p, due }
 
 local function Run( cmd, p, name )
@@ -221,6 +225,16 @@ function A.OnSecond()
 				Run( w.cmd, w.p, w.name )
 			end
 		end
+	end
+	if readyClose and BAA.tick >= readyClose then
+		readyClose = nil
+		CloseGameBoxes()
+	end
+	if readyWait and BAA.tick >= readyWait.due then
+		local w = readyWait
+		readyWait = nil
+		-- за время ожидания настройки могли измениться
+		if not BAA.cfg.paused and BAA.cfg.acc.ready then ReadyAnswer( w.name ) end
 	end
 	local pr = A.pendingRaidInvite
 	if pr then
@@ -317,6 +331,77 @@ function A.OnResurrect( p )
 	ToastAcc( "RES", "Принял воскрешение от " .. name )
 end
 
+-- Проверка готовности: отвечаем «готов» сразу или через заданную задержку
+
+local function ReadyLib()
+	return raid.IsExist() and raid or group
+end
+
+-- Мой ответ в идущей проверке (nil, если себя в списке не нашли)
+local function MyReadyState( info )
+	if type( info.members ) ~= "table" then return nil end
+	local me = avatar.GetUniqueId()
+	for _, m in pairs( info.members ) do
+		if type( m ) == "table" and m.uniqueId == me then return m.state end
+	end
+	return nil
+end
+
+-- Окно игры «Проверка готовности» (аддон ReadyCheck показывает его через ContextUniMessageBox) закрывается
+-- только своей кнопкой или по таймеру, причём по таймеру оно отвечает «не готов» поверх нашего «готов».
+-- Событие закрытия SCRIPT_FORCE_CLOSE_MESSAGE_BOX пользовательский аддон послать не может (common.SendEvent
+-- из пользовательского аддона доходит только до пользовательских), поэтому перезагружаем аддон окон сообщений.
+-- Вместе с этим окном закрываются и остальные открытые окна сообщений игры.
+local MSGBOX_ADDON = "ContextUniMessageBox"
+function CloseGameBoxes()
+	local list = common.GetStateManagedAddons()
+	-- Ожидаем: списка может не быть (nil), или аддон окон сообщений не управляемый / сейчас не в состоянии
+	-- LOADED — тогда перезагружать его нельзя, окно игры остаётся до конца таймера
+	if type( list ) ~= "table" then return end
+	for _, a in pairs( list ) do
+		if a.name == MSGBOX_ADDON and a.state == ADDON_STATE_LOADED then
+			common.StateReloadManagedAddon( MSGBOX_ADDON )
+			BAA.Log( "готовность: окно игры закрыто перезагрузкой", MSGBOX_ADDON ) --@debug
+			return
+		end
+	end
+end
+
+function ReadyAnswer( name )
+	local lib = ReadyLib()
+	local info = lib.GetReadyCheckInfo()
+	-- Ожидаем: пока шла задержка, проверка могла закончиться (nil или isInProgress = false)
+	if type( info ) ~= "table" or not info.isInProgress then return end
+	-- Ожидаем: игрок мог ответить сам, пока шла задержка — его ответ не трогаем
+	local state = MyReadyState( info )
+	if state ~= nil and READY_CHECK_READY_STATE_UNKNOWN ~= nil and state ~= READY_CHECK_READY_STATE_UNKNOWN then return end
+	lib.ReportReadyCheck( true )
+	BAA.Log( "готовность: ответил «готов», проверку начал", name, "моё состояние было", tostring( state ) ) --@debug
+	-- окно игры появляется чуть позже события о начале проверки, поэтому закрываем его на следующей секунде
+	readyClose = BAA.tick + 1
+	ToastAcc( "READY", "Подтвердил готовность: проверку начал " .. name )
+end
+
+function A.OnReadyCheckStarted( p )
+	readyWait = nil
+	local m = FindMember( p.initiatorId, nil )
+	local name = m and S( m.name ) or ""
+	-- свою проверку (в том числе запущенную по «??») не подтверждаем: Filter.Allowed отсекает себя
+	if not Check( "ready", name ) then return end
+	local cd = BAA.cfg.accCd.ready or 0
+	local info = ReadyLib().GetReadyCheckInfo()
+	-- Ожидаем: времени до конца проверки может не быть в ответе — тогда задержку не укорачиваем
+	local left = type( info ) == "table" and tonumber( info.remainingTimeMs )
+	if left then cd = math.max( 0, math.min( cd, math.floor( left / 1000 ) - 2 ) ) end
+	BAA.Log( "готовность: проверку начал", name, "задержка", cd, "осталось мс", tostring( left ) ) --@debug
+	if cd <= 0 then return ReadyAnswer( name ) end
+	readyWait = { due = BAA.tick + cd, name = name }
+end
+
+function A.OnReadyCheckEnded()
+	readyWait = nil
+end
+
 -- Подбор группы: голосование
 -- Все роли, доступные персонажу. Правило то же, что в окне игры (ClassActivityRolePlate,
 -- ScriptAddonAPI.GetSelectedRoles): роль есть в lfgLib.GetRoles(), и lfgLib.IsRoleAvailable
@@ -366,26 +451,6 @@ function A.OnMatchTeleport( p )
 	if type( matchMaking ) == "table" and type( matchMaking.InstancedEventTeleportReply ) == "function" then
 		matchMaking.InstancedEventTeleportReply( true )
 		ToastAcc( "ACTIVITY", "Принял приглашение в активность" )
-	end
-end
-
--- Предложение обмена: встречное предложение тому, кто зовёт
-function A.OnExchangeInvited( p )
-	local inv = interaction.GetExchangeInviter()
-	-- Ожидаем: если обмен уже отменён, GetExchangeInviter возвращает nil
-	local id = type( inv ) == "table" and inv.playerId or nil
-	local name = ( id and object.IsExist( id ) ) and S( object.GetName( id ) ) or ""
-	BAA.Log( "предложение обмена от", name ~= "" and name or "?" ) --@debug
-	if name == "" then return end
-	if not Check( "trade", name, id ) then return end
-	-- Ожидаем: принять обмен функцией можно не во всех клиентах — иначе встречное предложение
-	if type( interaction.AcceptInviteToExchange ) == "function" then
-		interaction.AcceptInviteToExchange( WS( name ) )
-		ToastAcc( "TRADE", "Принял обмен от " .. name )
-	else
-		interaction.InviteToExchange( WS( name ) )
-		A.lastTrade = { name = name, t = BAA.tick }
-		ToastAcc( "TRADE", "Встречное предложение обмена: " .. name )
 	end
 end
 

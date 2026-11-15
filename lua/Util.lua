@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 Global( "BAA", {} )
 
-BAA.VERSION = "0.9.4"
+BAA.VERSION = "0.10.1"
 BAA.tick = 0               -- секунды с запуска (EVENT_SECOND_TIMER)
 BAA.NICK_MIN = 3
 BAA.NICK_MAX = 14

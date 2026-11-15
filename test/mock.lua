@@ -99,7 +99,8 @@ group = {
 	InviteByName = function( w ) LOG( "group.InviteByName", w.s ) end,
 	SetLeader = function( uid ) LOG( "group.SetLeader", uid.u ) end,
 	StartReadyCheck = function() LOG( "group.StartReadyCheck" ) end,
-	GetReadyCheckInfo = function() return { isInProgress = false } end,
+	GetReadyCheckInfo = function() return STATE.ready end,
+	ReportReadyCheck = function( b ) LOG( "group.ReportReadyCheck", b ) end,
 	GetInviteInfo = function() return { invited = true } end,
 	Accept = function() LOG( "group.Accept" ) end,
 }
@@ -111,7 +112,8 @@ raid = {
 	InviteByName = function( w ) LOG( "raid.InviteByName", w.s ) end,
 	ChangeLeader = function( uid ) LOG( "raid.ChangeLeader", uid.u ) end,
 	StartReadyCheck = function() LOG( "raid.StartReadyCheck" ) end,
-	GetReadyCheckInfo = function() return { isInProgress = false } end,
+	GetReadyCheckInfo = function() return STATE.ready end,
+	ReportReadyCheck = function( b ) LOG( "raid.ReportReadyCheck", b ) end,
 	Create = function() LOG( "raid.Create" ) STATE.kind = "raid" end,
 	GetInviteInfo = function() return { invited = true } end,
 	Accept = function() LOG( "raid.Accept" ) end,
@@ -127,7 +129,6 @@ guild = { IsExist = function() return true end, GetMember = function( w ) return
 interaction = {
 	HasExchange = function() return false end,
 	InviteToExchange = function( w ) LOG( "interaction.InviteToExchange", w.s ) end,
-	GetExchangeInviter = function() return STATE.inviter and { playerId = STATE.inviter } end,
 }
 ENUM_LFGRole_Tank, ENUM_LFGRole_Healer, ENUM_LFGRole_DamageDealer = 0, 1, 2
 lfgLib = { GetRoles = function() return { [ 0 ] = 0, 1, 2 } end, VoteYes = function( r ) LOG( "lfgLib.VoteYes", table.concat( r, "," ) ) end,
@@ -138,3 +139,11 @@ questionLib = {
 }
 CHAT_TYPE_WHISPER = 7
 WIDGET_ALIGN_LOW_ABS = 5
+
+READY_CHECK_READY_STATE_UNKNOWN, READY_CHECK_READY_STATE_READY, READY_CHECK_READY_STATE_NOT_READY = 0, 1, 2
+function Widget.SetFocus() end
+
+ADDON_STATE_LOADED = 3
+RELOADS = {}
+common.GetStateManagedAddons = function() return { { name = "Other", state = 3 }, { name = "ContextUniMessageBox", state = STATE.boxState or 3 } } end
+common.StateReloadManagedAddon = function( n ) RELOADS[ #RELOADS + 1 ] = n print( "  >> reload " .. n ) end

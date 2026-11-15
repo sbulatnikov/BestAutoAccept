@@ -27,14 +27,14 @@ BAA.ACCS = {
 		tip = "Сразу принимать приглашение в группу или отряд" },
 	{ k = "activity", icon = "ACTIVITY", label = "Приглашение в активность",
 		tip = "Сразу принимать приглашение в активность" },
-	{ k = "trade", icon = "TRADE", label = "Предложение обмена",
-		tip = "Когда игрок предлагает обмен, аддон сразу отправляет ему встречное предложение обмена" },
 	{ k = "vehicle", icon = "VEHICLE", label = "Транспорт",
 		tip = "Сразу садиться в транспорт игрока или к нему на мотоцикл" },
 	{ k = "carry", icon = "CARRY", label = "На ручки!",
 		tip = "Сразу соглашаться, когда игрок предлагает взять вас на руки" },
 	{ k = "res", icon = "RES", label = "Воскрешение",
 		tip = "Сразу принимать воскрешение от игрока" },
+	{ k = "ready", icon = "READY", label = "Проверка готовности", cd = 0,
+		tip = "Отвечать «готов» на проверку готовности, которую начал игрок. Справа — задержка ответа" },
 }
 
 BAA.CMD_BY_CODE = {}
@@ -46,11 +46,15 @@ local function Defaults()
 		react = { all = false, friends = true, guild = true, memF = true, memG = true },
 		cmds = {},
 		acc = {},
+		accCd = {},     -- задержка ответа для автопринятий, у которых она есть
 		bl = {},
 		paused = false,
 	}
 	for _, c in ipairs( BAA.CMDS ) do d.cmds[ c.k ] = { on = true, cd = c.cd } end
-	for _, a in ipairs( BAA.ACCS ) do d.acc[ a.k ] = true end
+	for _, a in ipairs( BAA.ACCS ) do
+		d.acc[ a.k ] = true
+		if a.cd then d.accCd[ a.k ] = a.cd end
+	end
 	return d
 end
 
@@ -86,6 +90,9 @@ function Cfg.Load()
 	for _, cmd in ipairs( BAA.CMDS ) do
 		local s = c.cmds[ cmd.k ]
 		s.cd = math.max( 0, math.min( BAA.CD_MAX, math.floor( tonumber( s.cd ) or cmd.cd ) ) )
+	end
+	for _, a in ipairs( BAA.ACCS ) do
+		if a.cd then c.accCd[ a.k ] = math.max( 0, math.min( BAA.CD_MAX, math.floor( tonumber( c.accCd[ a.k ] ) or a.cd ) ) ) end
 	end
 	BAA.cfg = c
 	BAA.DEBUG = ( g.debug == true ) --@debug
@@ -133,7 +140,7 @@ function Cfg.BlacklistRemove( index )
 	end
 end
 
--- Сколько пунктов включено (5 команд + 6 автопринятий)
+-- Сколько пунктов включено (5 команд + 7 автопринятий)
 function Cfg.CountOn()
 	local n, total = 0, 0
 	for _, c in ipairs( BAA.CMDS ) do total = total + 1 if BAA.cfg.cmds[ c.k ].on then n = n + 1 end end
