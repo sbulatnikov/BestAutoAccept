@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:   # те же проверки и сборка — перед выпуском (release.yml)
 
 jobs:
   test:
@@ -28,6 +29,7 @@ jobs:
         run: |
           ! grep -rnE '(^|[^[:alnum:]_.])pcall\b' out/BestAutoAccept/Scripts --include='*.lua'
           ! grep -rnwE 'debug|DEBUG|Debug|Probe' out/BestAutoAccept/Scripts --include='*.lua'
+          test ! -e out/BestAutoAccept/Scripts/Probe.lua
       - name: Упаковка
         run: python gen/pak.py out/BestAutoAccept out/BestAutoAccept.pak
       - uses: actions/upload-artifact@v4
