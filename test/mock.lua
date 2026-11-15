@@ -129,7 +129,6 @@ guild = { IsExist = function() return true end, GetMember = function( w ) return
 interaction = {
 	HasExchange = function() return false end,
 	InviteToExchange = function( w ) LOG( "interaction.InviteToExchange", w.s ) end,
-	GetExchangeInviter = function() return STATE.inviter and { playerId = STATE.inviter } end,
 }
 ENUM_LFGRole_Tank, ENUM_LFGRole_Healer, ENUM_LFGRole_DamageDealer = 0, 1, 2
 lfgLib = { GetRoles = function() return { [ 0 ] = 0, 1, 2 } end, VoteYes = function( r ) LOG( "lfgLib.VoteYes", table.concat( r, "," ) ) end,

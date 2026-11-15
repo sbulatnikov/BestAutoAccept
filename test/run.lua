@@ -61,10 +61,10 @@ edit.text = "9999"; REACTIONS.baa_cd_enter( { widget = edit } )
 assert( BAA.cfg.cmds.invite.cd == 30 )
 BAA.cfg.cmds.invite.cd = 0
 -- автопринятие
-click( "baa_acc_switch", BAA.Child( W( "AccRow4" ), "AccSwitch" ) )
+click( "baa_acc_switch", BAA.Child( W( "AccRow3" ), "AccSwitch" ) )
 assert( BAA.cfg.acc.vehicle == false )
 assert( W( "BAAButton" ).variant == 1 )
-click( "baa_acc_switch", BAA.Child( W( "AccRow4" ), "AccSwitch" ) )
+click( "baa_acc_switch", BAA.Child( W( "AccRow3" ), "AccSwitch" ) )
 -- подсказки
 REACTIONS.baa_tip( { widget = BAA.Child( W( "CmdRow2" ), "CmdName" ), active = true } )
 assert( W( "Tooltip" ).visible and W( "TipText" ).val:find( "лидерство" ) )
@@ -123,8 +123,6 @@ ev( "EVENT_RAID_INVITE", { inviterName = WS( "Чужой" ) } )
 ev( "EVENT_RESURRECT_REQUESTED", { resurrecterName = WS( "Арагорн" ), unitId = { o = "Арагорн" } } )
 ev( "EVENT_LFG_VOTE", { initiator = WS( "Арагорн" ), roles = { 2 } } )
 ev( "EVENT_TELEPORT_OFFER_REQUEST", { requesterId = { o = "Луноликая" } } )
-STATE.inviter = { o = "Арагорн" }
-ev( "EVENT_ITEMS_EXCHANGE_INVITED", {} )
 STATE.question = { type = "x", questionData = { questionCustomData = { text = WS( "<html>[<r name=\"caster\"/>] предлагает вам занять пассажирское место Молнии. Вы согласны?</html>" ) } },
 	clientData = { [ 0 ] = { name = "caster", text = WS( "Арагорн" ) } } }
 ev( "EVENT_QUESTION_ADDED", { id = 1 } )
@@ -148,16 +146,16 @@ group.GetMembers = function() return MEMBERS end
 ME.uid = MEMBERS[ 1 ].uniqueId
 local function check( left, mine ) STATE.ready = { isInProgress = true, remainingTimeMs = left, members = { { uniqueId = ME.uid, state = mine or 0 } } } end
 -- строка 7: переключатель и поле задержки
-local row7 = W( "AccRow7" )
-local box7 = BAA.Child( row7, "CdBox" )
+local row6 = W( "AccRow6" )
+local box6 = BAA.Child( row6, "CdBox" )
 assert( BAA.cfg.acc.ready == true and BAA.cfg.accCd.ready == 0 )
-click( "baa_cd_plus", BAA.Child( box7, "CdPlus" ) )
+click( "baa_cd_plus", BAA.Child( box6, "CdPlus" ) )
 assert( BAA.cfg.accCd.ready == 5 and BAA.cfg.cmds.invite.cd == 0 )
-local e7 = BAA.Child( box7, "CdEdit" )
+local e7 = BAA.Child( box6, "CdEdit" )
 REACTIONS.baa_cd_focus( { widget = e7, active = true } ); e7.text = "99"; REACTIONS.baa_cd_enter( { widget = e7 } )
 assert( BAA.cfg.accCd.ready == 30 and e7.text == "30", e7.text )
-REACTIONS.baa_cd_down( { widget = box7 } ) assert( BAA.cfg.accCd.ready == 25 )
-REACTIONS.baa_tip( { widget = box7, active = true } ) assert( W( "TipText" ).val:find( "через 25" ), W( "TipText" ).val )
+REACTIONS.baa_cd_down( { widget = box6 } ) assert( BAA.cfg.accCd.ready == 25 )
+REACTIONS.baa_tip( { widget = box6, active = true } ) assert( W( "TipText" ).val:find( "через 25" ), W( "TipText" ).val )
 BAA.cfg.accCd.ready = 0
 local n = #CALLS
 check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 3 ].uniqueId } )   -- друг, сразу
@@ -182,11 +180,11 @@ ev( "EVENT_READY_CHECK_ENDED" ) for i = 1, 4 do ev( "EVENT_SECOND_TIMER" ) end a
 BAA.cfg.accCd.ready = 30; check( 5000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
 for i = 1, 3 do ev( "EVENT_SECOND_TIMER" ) end assert( #CALLS == n + 3, "не уложился в остаток" )
 -- выключено / пауза
-click( "baa_acc_switch", BAA.Child( row7, "AccSwitch" ) ) assert( BAA.cfg.acc.ready == false )
+click( "baa_acc_switch", BAA.Child( row6, "AccSwitch" ) ) assert( BAA.cfg.acc.ready == false )
 BAA.cfg.accCd.ready = 0; check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
 assert( #CALLS == n + 3 )
-click( "baa_cd_plus", BAA.Child( box7, "CdPlus" ) ) assert( BAA.cfg.accCd.ready == 0, "поле меняется у выключенного" )
-click( "baa_acc_switch", BAA.Child( row7, "AccSwitch" ) )
+click( "baa_cd_plus", BAA.Child( box6, "CdPlus" ) ) assert( BAA.cfg.accCd.ready == 0, "поле меняется у выключенного" )
+click( "baa_acc_switch", BAA.Child( row6, "AccSwitch" ) )
 assert( CONFIG.BestAutoAccept.baa.accCd.ready == 0 and CONFIG.BestAutoAccept.baa.acc.ready == true )
 ev( "EVENT_SECOND_TIMER" ) assert( #RELOADS == 3, #RELOADS )   -- по одной на каждый ответ аддона
 STATE.boxState = 2; BAA.cfg.accCd.ready = 0; check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )

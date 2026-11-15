@@ -454,26 +454,6 @@ function A.OnMatchTeleport( p )
 	end
 end
 
--- Предложение обмена: встречное предложение тому, кто зовёт
-function A.OnExchangeInvited( p )
-	local inv = interaction.GetExchangeInviter()
-	-- Ожидаем: если обмен уже отменён, GetExchangeInviter возвращает nil
-	local id = type( inv ) == "table" and inv.playerId or nil
-	local name = ( id and object.IsExist( id ) ) and S( object.GetName( id ) ) or ""
-	BAA.Log( "предложение обмена от", name ~= "" and name or "?" ) --@debug
-	if name == "" then return end
-	if not Check( "trade", name, id ) then return end
-	-- Ожидаем: принять обмен функцией можно не во всех клиентах — иначе встречное предложение
-	if type( interaction.AcceptInviteToExchange ) == "function" then
-		interaction.AcceptInviteToExchange( WS( name ) )
-		ToastAcc( "TRADE", "Принял обмен от " .. name )
-	else
-		interaction.InviteToExchange( WS( name ) )
-		A.lastTrade = { name = name, t = BAA.tick }
-		ToastAcc( "TRADE", "Встречное предложение обмена: " .. name )
-	end
-end
-
 -- «Взять на руки»: событие и ответ убраны из документации в 15.0.03 — отвечаем, только если функция есть
 function A.OnTakeOnHands( p )
 	local name = ""

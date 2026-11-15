@@ -64,7 +64,7 @@ end
 
 -- События, которые печатаются в отладочной сборке
 Probe.EVENTS = {
-	"EVENT_ITEMS_EXCHANGE_INVITED", "EVENT_ITEMS_EXCHANGE_STARTED", "EVENT_PASSANGER_STATE_CHANGED",
+	"EVENT_PASSANGER_STATE_CHANGED",
 	"EVENT_LFG_VOTE", "EVENT_TELEPORT_OFFER_REQUEST", "EVENT_MATCH_MAKING_EVENT_TELEPORT_REQUEST",
 	"EVENT_RESURRECT_REQUESTED", "EVENT_GROUP_INVITE", "EVENT_RAID_INVITE", "EVENT_TAKE_ON_HANDS_REQUEST",
 }
@@ -74,7 +74,6 @@ function Probe.Report()
 	local function has( lib, fn ) return ( type( lib ) == "table" and type( lib[ fn ] ) == "function" ) and "есть" or "нет" end
 	BAA.File( "проверка API:" )
 	BAA.File( "  CHAT_TYPE_WHISPER = " .. tostring( CHAT_TYPE_WHISPER ) )
-	BAA.File( "  interaction.AcceptInviteToExchange: " .. has( interaction, "AcceptInviteToExchange" ) )
 	BAA.File( "  family.TakeOnHandsResponse: " .. has( family, "TakeOnHandsResponse" ) )
 	BAA.File( "  matchMaking.InstancedEventTeleportReply: " .. has( matchMaking, "InstancedEventTeleportReply" ) )
 	BAA.File( "  VAL_OBJ_TYPE_INSTANCED_EVENT = " .. tostring( VAL_OBJ_TYPE_INSTANCED_EVENT ) ..
