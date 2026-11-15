@@ -149,6 +149,7 @@ ICON_PATHS = {
                 ['M4.6 8.9L6.4 6.6h2.2l0.8 1.2h1.6l0.9 1.6l-1.4 2.6h-3.4z']),
     'carry': (['M4.5 9V5a1 1 0 0 1 2 0v3.5M6.5 8V3.5a1 1 0 0 1 2 0V8M8.5 8V4.5a1 1 0 0 1 2 0V8.5M10.5 8.5V6a1 1 0 0 1 2 0v4c0 2.5-1.8 4.5-4.3 4.5H7.5c-1.5 0-2.4-.6-3.3-1.6L2 10.5a1 1 0 0 1 1.5-1.3L4.5 10'], 1.5),
     'res': (['M8 1v14M6 3.5h4M3.5 6.5h9M5.5 10.5l5 2'], 1.6),
+    'ready': (['M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0M5.2 8.3l2 2 3.7-4.2'], 1.6),
 }
 
 
@@ -167,7 +168,7 @@ def icon_tex(name, kind, color, key=None, size=32):
     return X.stretch(name, img)
 
 
-ACC_KEYS = ['group', 'activity', 'trade', 'vehicle', 'carry', 'res']
+ACC_KEYS = ['group', 'activity', 'trade', 'vehicle', 'carry', 'res', 'ready']
 for k in ACC_KEYS:
     icon_tex('Acc_%s_On' % k, k, ACC_I, 'ACC_%s_ON' % k.upper())
     icon_tex('Acc_%s_Off' % k, k, TXT_DIS, 'ACC_%s_OFF' % k.upper())
@@ -196,7 +197,7 @@ def F(name, f, color, alignx='left', **kw):
 
 
 # ------------------------------------------------------------------ виджеты
-W_, H_ = 360, 544           # окно (макет)
+W_, H_ = 360, 572           # окно (макет)
 WW, WH = P(W_), P(H_)
 HDR = 40
 
@@ -333,11 +334,20 @@ X.panel('AccIcon', PL(P(12), (AH - P(16)) // 2, P(16), P(16)), back='Textures/Ac
 tv('AccName', P(38), 0, P(260), AH, '../Texts/RowName.txt', transparent=False, pointing='baa_tip')
 acc_sw = [dict(v, reaction='baa_acc_switch') for v in sw_vars]
 X.button('AccSwitch', PL(WW - P(12) - 40, (AH - 20) // 2, 40, 20), acc_sw)
+# строка с задержкой ответа (проверка готовности): то же поле, что у команд, слева от переключателя
+ACC_CD_X = WW - P(12) - 40 - P(10) - BW
+tv('AccName', P(38), 0, ACC_CD_X - P(38) - P(6), AH, '../Texts/RowName.txt', transparent=False, pointing='baa_tip', fname='AccNameCd')
+X.panel('CdBox', PL(ACC_CD_X, (AH - BH) // 2, BW, BH), back=FIELD,
+        children=['CdFocus.(WidgetPanel).xdb', 'CdMinus.(WidgetButton).xdb', 'CdSep1.(WidgetPanel).xdb', 'CdEdit.(WidgetEditLine).xdb',
+                  'CdUnit.(WidgetTextView).xdb', 'CdSep2.(WidgetPanel).xdb', 'CdPlus.(WidgetButton).xdb'],
+        wheel=('baa_cd_up', 'baa_cd_down'), pointing='baa_tip', fname='AccCdBox')
+ACC_WITH_CD = {6}
 acc_rows = []
-for i in range(6):
-    acc_rows.append(X.panel('AccRow%d' % (i + 1), PL(0, Y(366 + 28 * i), WW, AH),
-                            children=['AccIcon.(WidgetPanel).xdb', 'AccName.(WidgetTextView).xdb', 'AccSwitch.(WidgetButton).xdb'],
-                            pick_children=True))
+for i in range(7):
+    kids = ['AccIcon.(WidgetPanel).xdb', 'AccName.(WidgetTextView).xdb', 'AccSwitch.(WidgetButton).xdb']
+    if i in ACC_WITH_CD:
+        kids = ['AccIcon.(WidgetPanel).xdb', 'AccNameCd.(WidgetTextView).xdb', 'AccCdBox.(WidgetPanel).xdb', 'AccSwitch.(WidgetButton).xdb']
+    acc_rows.append(X.panel('AccRow%d' % (i + 1), PL(0, Y(366 + 28 * i), WW, AH), children=kids, pick_children=True))
 
 X.panel('MainPage', PL(0, P(HDR), WW, WH - P(HDR)),
         children=['WhoTitle.(WidgetTextView).xdb'] + seg_children + ['Line1.(WidgetPanel).xdb', 'CmdTitle.(WidgetTextView).xdb',
@@ -364,7 +374,7 @@ add_t = X.text_file('BlAdd', '+ Добавить')
 X.button('BlAdd', PL(P(252), Y(80), P(96), P(30)),
          [{'normal': ADD['n'], 'hover': ADD['h'], 'pressed': ADD['p'], 'text': add_t, 'fmt': '../Texts/AddBtn.txt', 'reaction': 'baa_bl_add'}])
 
-LW, LH = P(336), P(412)
+LW, LH = P(336), P(440)
 CW, CH = LW - 8, LH - 8
 ROWW = CW - 14
 X.button('BlScrollInc', PL(0, 0, 1, 1), [{'normal': TRANSP}])

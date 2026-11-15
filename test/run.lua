@@ -140,6 +140,57 @@ for i = 1, 6 do ev( "EVENT_SECOND_TIMER" ) end
 assert( not W( "Toast1" ).visible )
 ev( "EVENT_UNKNOWN_SLASH_COMMAND", { text = WS( "/baa" ) } )
 assert( W( "BAAWindow" ).visible )
+print( "\n=== проверка готовности ===" )
+local function uid( n ) for _, m in pairs( group.GetMembers() ) do if m.name.s == n then return m.uniqueId end end end
+STATE.kind = "party"; STATE.members = { "Я", "Луноликая", "Арагорн", "Чужой" }
+local MEMBERS = group.GetMembers()
+group.GetMembers = function() return MEMBERS end
+ME.uid = MEMBERS[ 1 ].uniqueId
+local function check( left, mine ) STATE.ready = { isInProgress = true, remainingTimeMs = left, members = { { uniqueId = ME.uid, state = mine or 0 } } } end
+-- строка 7: переключатель и поле задержки
+local row7 = W( "AccRow7" )
+local box7 = BAA.Child( row7, "CdBox" )
+assert( BAA.cfg.acc.ready == true and BAA.cfg.accCd.ready == 0 )
+click( "baa_cd_plus", BAA.Child( box7, "CdPlus" ) )
+assert( BAA.cfg.accCd.ready == 5 and BAA.cfg.cmds.invite.cd == 0 )
+local e7 = BAA.Child( box7, "CdEdit" )
+REACTIONS.baa_cd_focus( { widget = e7, active = true } ); e7.text = "99"; REACTIONS.baa_cd_enter( { widget = e7 } )
+assert( BAA.cfg.accCd.ready == 30 and e7.text == "30", e7.text )
+REACTIONS.baa_cd_down( { widget = box7 } ) assert( BAA.cfg.accCd.ready == 25 )
+REACTIONS.baa_tip( { widget = box7, active = true } ) assert( W( "TipText" ).val:find( "через 25" ), W( "TipText" ).val )
+BAA.cfg.accCd.ready = 0
+local n = #CALLS
+check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 3 ].uniqueId } )   -- друг, сразу
+assert( #CALLS == n + 1 and CALLS[ #CALLS ] == "group.ReportReadyCheck true", CALLS[ #CALLS ] )
+assert( #RELOADS == 0 ) ev( "EVENT_SECOND_TIMER" )
+assert( #RELOADS == 1 and RELOADS[ 1 ] == "ContextUniMessageBox", "окно игры не закрыто" )
+ev( "EVENT_SECOND_TIMER" ) assert( #RELOADS == 1, "перезагрузка повторилась" )
+ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 4 ].uniqueId } )   -- чужой
+ev( "EVENT_READY_CHECK_STARTED", { initiatorId = ME.uid } )                  -- сам
+assert( #CALLS == n + 1, "ответил чужому или себе" )
+BAA.cfg.accCd.ready = 3
+ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
+ev( "EVENT_SECOND_TIMER" ) ev( "EVENT_SECOND_TIMER" ) assert( #CALLS == n + 1 )
+ev( "EVENT_SECOND_TIMER" ) assert( #CALLS == n + 2, "не ответил после задержки" )
+-- ответил сам за время задержки
+ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
+check( 30000, 2 ) for i = 1, 4 do ev( "EVENT_SECOND_TIMER" ) end assert( #CALLS == n + 2, "перебил ручной ответ" )
+-- проверка закончилась раньше
+check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
+ev( "EVENT_READY_CHECK_ENDED" ) for i = 1, 4 do ev( "EVENT_SECOND_TIMER" ) end assert( #CALLS == n + 2 )
+-- задержка длиннее остатка проверки: укорачиваем
+BAA.cfg.accCd.ready = 30; check( 5000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
+for i = 1, 3 do ev( "EVENT_SECOND_TIMER" ) end assert( #CALLS == n + 3, "не уложился в остаток" )
+-- выключено / пауза
+click( "baa_acc_switch", BAA.Child( row7, "AccSwitch" ) ) assert( BAA.cfg.acc.ready == false )
+BAA.cfg.accCd.ready = 0; check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
+assert( #CALLS == n + 3 )
+click( "baa_cd_plus", BAA.Child( box7, "CdPlus" ) ) assert( BAA.cfg.accCd.ready == 0, "поле меняется у выключенного" )
+click( "baa_acc_switch", BAA.Child( row7, "AccSwitch" ) )
+assert( CONFIG.BestAutoAccept.baa.accCd.ready == 0 and CONFIG.BestAutoAccept.baa.acc.ready == true )
+ev( "EVENT_SECOND_TIMER" ) assert( #RELOADS == 3, #RELOADS )   -- по одной на каждый ответ аддона
+STATE.boxState = 2; BAA.cfg.accCd.ready = 0; check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
+ev( "EVENT_SECOND_TIMER" ) assert( #RELOADS == 3, "перезагрузил незагруженный аддон" )
 if BAA.DEBUG ~= nil then
 	print( "\n=== отладочная сборка ===" )
 	ev( "EVENT_UNKNOWN_SLASH_COMMAND", { text = WS( "/baa debug" ) } )

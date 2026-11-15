@@ -12,7 +12,7 @@ local ui = {}
 UI.ui = ui
 UI.view = "main"            -- main | settings
 local blocked = nil         -- сегмент, который нельзя снять: { key, left }
-local editing = {}          -- [номер строки команды] = true, пока поле задержки в фокусе
+local editing = {}          -- ["c" или "a" + номер строки] = true, пока поле задержки в фокусе
 local blDirty = true
 
 local SEG_KEYS = { SegAll = "all", SegFriends = "friends", SegGuild = "guild" }
@@ -53,6 +53,12 @@ function UI.Init()
 	for i, a in ipairs( BAA.ACCS ) do
 		local row = W( "AccRow" .. i )
 		local r = { row = row, icon = Child( row, "AccIcon" ), name = Child( row, "AccName" ), switch = Child( row, "AccSwitch" ) }
+		if a.cd then
+			local box = Child( row, "CdBox" )
+			r.box, r.minus, r.plus, r.edit = box, Child( box, "CdMinus" ), Child( box, "CdPlus" ), Child( box, "CdEdit" )
+			r.focus, r.unit = Child( box, "CdFocus" ), Child( box, "CdUnit" )
+			SetText( r.unit, "с" )
+		end
 		SetText( r.name, a.label )
 		ui.accs[ i ] = r
 	end
@@ -96,6 +102,8 @@ local function Plural( n )
 	if m10 >= 2 and m10 <= 4 and ( m100 < 12 or m100 > 14 ) then return n .. " персонажа" end
 	return n .. " персонажей"
 end
+
+local RenderCd
 
 -- Число и «с» стоят по центру поля задержки (строка ввода сама выравнивает текст только влево)
 local CD_BOX, CD_SIDE, CD_DIGIT, CD_GAP, CD_UNIT = 101, 26, 9, 4, 8
@@ -150,6 +158,22 @@ local function RenderBlacklist()
 	end
 end
 
+-- Поле задержки: одинаковое у строк команд и у автопринятия с задержкой
+function RenderCd( row, id, on, cd )
+	Fade( row.box, on and 1 or 0.38 )
+	Enable( row.minus, on )
+	Enable( row.plus, on )
+	Enable( row.edit, on )
+	Show( row.focus, editing[ id ] and true or false )
+	if not editing[ id ] and row.edit then
+		local s = tostring( cd )
+		if row.shown ~= s then row.shown = s row.edit:SetText( WS( s ) ) end
+		PlaceCd( row, #s )
+	elseif editing[ id ] then
+		PlaceCd( row, 2 )
+	end
+end
+
 function UI.Render()
 	if not ui.window then return end
 	local cfg = BAA.cfg
@@ -182,18 +206,7 @@ function UI.Render()
 		SetVariant( row.switch, st.on and 1 or 0 )
 		Fade( row.chip, st.on and 1 or 0.4 )
 		Fade( row.name, st.on and 1 or 0.55 )
-		Fade( row.box, st.on and 1 or 0.38 )
-		Enable( row.minus, st.on )
-		Enable( row.plus, st.on )
-		Enable( row.edit, st.on )
-		Show( row.focus, editing[ i ] and true or false )
-		if not editing[ i ] and row.edit then
-			local s = tostring( st.cd )
-			if row.shown ~= s then row.shown = s row.edit:SetText( WS( s ) ) end
-			PlaceCd( row, #s )
-		elseif editing[ i ] then
-			PlaceCd( row, 2 )
-		end
+		RenderCd( row, "c" .. i, st.on, st.cd )
 	end
 
 	-- автопринятие
@@ -202,6 +215,7 @@ function UI.Render()
 		SetVariant( row.switch, on and 1 or 0 )
 		SetTex( row.icon, "ACC_" .. a.icon .. ( on and "_ON" or "_OFF" ) )
 		Fade( row.name, on and 1 or 0.55 )
+		if a.cd then RenderCd( row, "a" .. i, on and true or false, cfg.accCd[ a.k ] ) end
 	end
 
 	if settings then RenderBlacklist() end
@@ -268,6 +282,14 @@ local function TipFor( w )
 	if name == "CmdName" or name == "CmdChip" then
 		local i = RowIndex( w, "CmdRow" )
 		return i and BAA.CMDS[ i ] and BAA.CMDS[ i ].tip
+	end
+	if name == "CdBox" and RowIndex( w, "AccRow" ) then
+		local a = BAA.ACCS[ RowIndex( w, "AccRow" ) ]
+		if not a or not a.cd then return nil end
+		if not cfg.acc[ a.k ] then return "Автопринятие выключено — включите его, чтобы задать задержку" end
+		local cd = cfg.accCd[ a.k ]
+		if cd == 0 then return "Без задержки: отвечаю «готов» сразу" end
+		return "Отвечаю «готов» через " .. cd .. " с после начала проверки. Колесо мыши или -/+ меняют на 5 с"
 	end
 	if name == "CdBox" then
 		local i = RowIndex( w, "CmdRow" )
@@ -436,66 +458,81 @@ function UI.OnCmdSwitch( params )
 	UI.Changed()
 end
 
-local function SetCd( i, v )
-	local c = BAA.CMDS[ i ]
-	if not c then return end
-	local st = BAA.cfg.cmds[ c.k ]
-	if not st.on then return end
+-- Поле задержки, в котором сработала реакция: строка команды или автопринятия с задержкой
+local function CdRef( params )
+	local w = params.widget
+	if not w then return nil end
+	local i = RowIndex( w, "CmdRow" )
+	if i and BAA.CMDS[ i ] then
+		local st = BAA.cfg.cmds[ BAA.CMDS[ i ].k ]
+		return { id = "c" .. i, row = ui.cmds[ i ], on = st.on,
+			get = function() return st.cd end, set = function( v ) st.cd = v end }
+	end
+	i = RowIndex( w, "AccRow" )
+	local a = i and BAA.ACCS[ i ]
+	if a and a.cd then
+		local k = a.k
+		return { id = "a" .. i, row = ui.accs[ i ], on = BAA.cfg.acc[ k ] and true or false,
+			get = function() return BAA.cfg.accCd[ k ] end, set = function( v ) BAA.cfg.accCd[ k ] = v end }
+	end
+	return nil
+end
+
+local function SetCd( ref, v )
+	if not ref.on then return end
 	v = math.max( 0, math.min( BAA.CD_MAX, math.floor( v ) ) )
-	if st.cd ~= v then
-		st.cd = v
-		ui.cmds[ i ].shown = nil
+	if ref.get() ~= v then
+		ref.set( v )
+		ref.row.shown = nil
 		UI.Changed()
 	end
 end
 
-local function Step( i, dir )
-	local c = BAA.CMDS[ i ]
-	if not c then return end
-	local cd = BAA.cfg.cmds[ c.k ].cd
-	if dir > 0 then SetCd( i, math.floor( cd / 5 ) * 5 + 5 )
-	else SetCd( i, cd - 5 < 0 and 0 or math.ceil( cd / 5 ) * 5 - 5 ) end
+local function Step( params, dir )
+	local ref = CdRef( params )
+	if not ref then return end
+	local cd = ref.get()
+	if dir > 0 then SetCd( ref, math.floor( cd / 5 ) * 5 + 5 )
+	else SetCd( ref, cd - 5 < 0 and 0 or math.ceil( cd / 5 ) * 5 - 5 ) end
 end
 
-function UI.OnCdMinus( params ) local i = CmdIndex( params ) if i then Step( i, -1 ) end end
-function UI.OnCdPlus( params ) local i = CmdIndex( params ) if i then Step( i, 1 ) end end
-function UI.OnCdUp( params ) local i = CmdIndex( params ) if i then Step( i, 1 ) end end
-function UI.OnCdDown( params ) local i = CmdIndex( params ) if i then Step( i, -1 ) end end
+function UI.OnCdMinus( params ) Step( params, -1 ) end
+function UI.OnCdPlus( params ) Step( params, 1 ) end
+function UI.OnCdUp( params ) Step( params, 1 ) end
+function UI.OnCdDown( params ) Step( params, -1 ) end
 
 -- Значение проверяется после ввода: Enter или потеря фокуса; Esc возвращает прежнее
-local function Commit( i )
-	local row = ui.cmds[ i ]
-	if not row then return end
-	editing[ i ] = nil
-	local v = tonumber( BAA.Trim( S( row.edit:GetText() ) ) )
-	row.shown = nil
-	if v then SetCd( i, v ) end
+local function Commit( ref )
+	editing[ ref.id ] = nil
+	local v = tonumber( BAA.Trim( S( ref.row.edit:GetText() ) ) )
+	ref.row.shown = nil
+	if v then SetCd( ref, v ) end
 	UI.Render()
 end
 
 function UI.OnCdFocus( params )
-	local i = CmdIndex( params )
-	if not i then return end
+	local ref = CdRef( params )
+	if not ref then return end
 	if params.active then
-		editing[ i ] = true
+		editing[ ref.id ] = true
 		UI.Render()
-	elseif editing[ i ] then
-		Commit( i )
+	elseif editing[ ref.id ] then
+		Commit( ref )
 	end
 end
 
 function UI.OnCdEnter( params )
-	local i = CmdIndex( params )
-	if not i then return end
-	Commit( i )
+	local ref = CdRef( params )
+	if not ref then return end
+	Commit( ref )
 	params.widget:SetFocus( false )
 end
 
 function UI.OnCdEsc( params )
-	local i = CmdIndex( params )
-	if not i then return end
-	editing[ i ] = nil
-	ui.cmds[ i ].shown = nil
+	local ref = CdRef( params )
+	if not ref then return end
+	editing[ ref.id ] = nil
+	ref.row.shown = nil
 	params.widget:SetFocus( false )
 	UI.Render()
 end
