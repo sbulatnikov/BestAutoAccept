@@ -361,7 +361,10 @@ local function RenderToasts()
 	end
 end
 
+-- Уведомления можно выключить в настройках: аддон делает всё то же самое, только молча.
+-- Предложение «Следовать за …?» — не уведомление, а кнопка действия: оно показывается всегда.
 function UI.Toast( d )
+	if not BAA.cfg.toasts then return end
 	d.left = BAA.TOAST_TIME
 	table.insert( toastData, 1, d )
 	while #toastData > 3 do table.remove( toastData ) end
