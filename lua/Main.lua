@@ -53,6 +53,7 @@ local CLICKS = {
 	baa_cd_minus = UI.OnCdMinus,
 	baa_cd_plus = UI.OnCdPlus,
 	baa_acc_switch = UI.OnAccSwitch,
+	baa_notify_switch = UI.OnNotifySwitch,
 	baa_bl_add = UI.OnBlAdd,
 	baa_bl_remove = UI.OnBlRemove,
 	baa_follow = UI.OnFollow,
