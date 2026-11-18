@@ -189,6 +189,45 @@ assert( CONFIG.BestAutoAccept.baa.accCd.ready == 0 and CONFIG.BestAutoAccept.baa
 ev( "EVENT_SECOND_TIMER" ) assert( #RELOADS == 3, #RELOADS )   -- по одной на каждый ответ аддона
 STATE.boxState = 2; BAA.cfg.accCd.ready = 0; check( 30000 ); ev( "EVENT_READY_CHECK_STARTED", { initiatorId = MEMBERS[ 2 ].uniqueId } )
 ev( "EVENT_SECOND_TIMER" ) assert( #RELOADS == 3, "перезагрузил незагруженный аддон" )
+print( "\n=== уведомления можно выключить ===" )
+local function res() ev( "EVENT_RESURRECT_REQUESTED", { resurrecterName = WS( "Арагорн" ), unitId = { o = "Арагорн" } } ) end
+assert( BAA.cfg.toasts == true, "по умолчанию уведомления включены" )
+n = #CALLS
+res()
+assert( #CALLS == n + 1 and W( "Toast1" ).visible, "включено: действие и уведомление" )
+click( "baa_gear", W( "HdrGear" ) )
+assert( W( "NotifySwitch" ).variant == 1 )
+REACTIONS.baa_tip( { widget = W( "NotifyName" ), active = true } ) assert( W( "TipText" ).val:find( "показывает" ), W( "TipText" ).val )
+click( "baa_notify_switch", W( "NotifySwitch" ) )
+assert( BAA.cfg.toasts == false and CONFIG.BestAutoAccept.baa.toasts == false, "настройка не сохранена" )
+assert( W( "NotifySwitch" ).variant == 0 )
+assert( not W( "Toast1" ).visible, "уведомление на экране не убрано при выключении" )
+REACTIONS.baa_tip( { widget = W( "NotifyName" ), active = true } ) assert( W( "TipText" ).val:find( "молча" ), W( "TipText" ).val )
+res()
+assert( #CALLS == n + 2, "выключено: действие должно выполняться" )
+assert( not W( "Toast1" ).visible, "выключено: уведомления быть не должно" )
+-- отказ тоже молча
+STATE.kind = "none"; STATE.members = { "Я" }; NOW = NOW + 60000
+whisper( "Арагорн", "!!" )
+assert( not W( "Toast1" ).visible, "выключено: отказ тоже без уведомления" )
+-- кнопка «Следовать» — не уведомление, появляется всегда
+W( "FollowPrompt" ).visible = false
+STATE.units = { { o = "Арагорн" } }; NOW = NOW + 60000
+whisper( "Арагорн", ">>", { senderId = { o = "Арагорн" } } )
+assert( W( "FollowPrompt" ).visible, "выключено: кнопка «Следовать» должна появиться" )
+click( "baa_follow", W( "FollowButton" ) )
+assert( not W( "Toast1" ).visible )
+-- у прежних настроек без этого поля уведомления включены
+CONFIG.BestAutoAccept.baa.toasts = nil
+BAA.Cfg.Load()
+assert( BAA.cfg.toasts == true, "старые настройки: уведомления включены" )
+BAA.cfg.toasts = false; BAA.Cfg.Save(); BAA.Cfg.Load()
+assert( BAA.cfg.toasts == false, "выключенное не должно включаться при загрузке" )
+click( "baa_notify_switch", W( "NotifySwitch" ) )
+assert( BAA.cfg.toasts == true and W( "NotifySwitch" ).variant == 1 )
+res()
+assert( W( "Toast1" ).visible, "включили обратно: уведомление есть" )
+click( "baa_gear", W( "HdrGear" ) )
 if BAA.DEBUG ~= nil then
 	print( "\n=== отладочная сборка ===" )
 	ev( "EVENT_UNKNOWN_SLASH_COMMAND", { text = WS( "/baa debug" ) } )
