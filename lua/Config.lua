@@ -49,6 +49,7 @@ local function Defaults()
 		accCd = {},     -- задержка ответа для автопринятий, у которых она есть
 		bl = {},
 		paused = false,
+		toasts = true,  -- показывать уведомления о том, что аддон сделал или не смог сделать
 	}
 	for _, c in ipairs( BAA.CMDS ) do d.cmds[ c.k ] = { on = true, cd = c.cd } end
 	for _, a in ipairs( BAA.ACCS ) do

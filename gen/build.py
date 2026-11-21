@@ -373,7 +373,7 @@ add_t = X.text_file('BlAdd', '+ Добавить')
 X.button('BlAdd', PL(P(252), Y(80), P(96), P(30)),
          [{'normal': ADD['n'], 'hover': ADD['h'], 'pressed': ADD['p'], 'text': add_t, 'fmt': '../Texts/AddBtn.txt', 'reaction': 'baa_bl_add'}])
 
-LW, LH = P(336), P(412)
+LW, LH = P(336), P(372)       # ниже списка — строка «Показывать уведомления»
 CW, CH = LW - 8, LH - 8
 ROWW = CW - 14
 X.button('BlScrollInc', PL(0, 0, 1, 1), [{'normal': TRANSP}])
@@ -397,9 +397,17 @@ X.button('BlRemove', PL(ROWW - P(28), (BRH - P(24)) // 2, P(24), P(24)),
 X.panel('BlRow', PL(0, 0, ROWW, BRH), children=['BlRowIcon.(WidgetPanel).xdb', 'BlRowName.(WidgetTextView).xdb', 'BlRemove.(WidgetButton).xdb'],
         pick_children=True, visible=False)
 
+# уведомления: один переключатель под чёрным списком
+X.panel('Line3', PL(P(12), Y(501), P(336), 1), back=LINE_TEX, transparent=True)
+tv('NotifyName', P(12), 0, P(260), AH, '../Texts/RowName.txt', transparent=False, pointing='baa_tip')
+X.button('NotifySwitch', PL(WW - P(12) - 40, (AH - 20) // 2, 40, 20), [dict(v, reaction='baa_notify_switch') for v in sw_vars])
+X.panel('NotifyRow', PL(0, Y(506), WW, AH), children=['NotifyName.(WidgetTextView).xdb', 'NotifySwitch.(WidgetButton).xdb'],
+        pick_children=True)
+
 X.panel('SettingsPage', PL(0, P(HDR), WW, WH - P(HDR)),
         children=['BlTitle.(WidgetTextView).xdb', 'BlCount.(WidgetTextView).xdb', 'BlInput.(WidgetPanel).xdb', 'BlAdd.(WidgetButton).xdb',
-                  'BlBox.(WidgetPanel).xdb', 'BlRow.(WidgetPanel).xdb'], pick_children=True, visible=False)
+                  'BlBox.(WidgetPanel).xdb', 'BlRow.(WidgetPanel).xdb', 'Line3.(WidgetPanel).xdb', 'NotifyRow.(WidgetPanel).xdb'],
+        pick_children=True, visible=False)
 
 # --- подсказка
 F('TipText', F_SMALL, TXT, 'left', aligny='top')

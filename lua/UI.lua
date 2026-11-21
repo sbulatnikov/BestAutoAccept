@@ -75,6 +75,8 @@ function UI.Init()
 	ui.blRow = W( "BlRow" )
 	ui.blEmpty = W( "BlEmpty" )
 	ui.blCount = W( "BlCount" )
+	ui.notifySwitch = W( "NotifySwitch" )
+	SetText( W( "NotifyName" ), "Показывать уведомления" )
 	ui.tip = W( "Tooltip" )
 	ui.tipText = W( "TipText" )
 	ui.tipBack = W( "TipBack" )
@@ -218,7 +220,10 @@ function UI.Render()
 		if a.cd then RenderCd( row, "a" .. i, on and true or false, cfg.accCd[ a.k ] ) end
 	end
 
-	if settings then RenderBlacklist() end
+	if settings then
+		RenderBlacklist()
+		SetVariant( ui.notifySwitch, cfg.toasts and 1 or 0 )
+	end
 end
 
 function UI.Changed()
@@ -273,12 +278,16 @@ local function TipFor( w )
 	if name == "BlTitle" then return "На этих персонажей аддон не реагирует: ни на команды в личке, ни на приглашения. Действует поверх «На кого реагируем»" end
 	if name == "StatusChip" then return cfg.paused and "Пауза — ничего не срабатывает" or "Аддон работает по настройкам" end
 	if name == "HdrGear" then
-		return UI.view == "settings" and "Вернуться к основным настройкам" or "Настройки: чёрный список. Все настройки аддона общие для всех персонажей"
+		return UI.view == "settings" and "Вернуться к основным настройкам" or "Настройки: чёрный список и уведомления. Все настройки аддона общие для всех персонажей"
 	end
 	if name == "HdrPause" then
 		return cfg.paused and "Снять паузу — всё снова работает по настройкам" or "Пауза: временно отключить все команды и автопринятие. Настройки не меняются"
 	end
 	if name == "HdrClose" then return "Закрыть окно" end
+	if name == "NotifyName" then
+		return cfg.toasts and "Аддон показывает, что он сделал: пригласил, принял приглашение, не смог выполнить команду"
+			or "Уведомления выключены: аддон работает молча. Кнопка «Следовать» на команду «>>» появляется всегда"
+	end
 	if name == "CmdName" or name == "CmdChip" then
 		local i = RowIndex( w, "CmdRow" )
 		return i and BAA.CMDS[ i ] and BAA.CMDS[ i ].tip
@@ -361,7 +370,10 @@ local function RenderToasts()
 	end
 end
 
+-- Уведомления можно выключить в настройках: аддон делает всё то же самое, только молча.
+-- Предложение «Следовать за …?» — не уведомление, а кнопка действия: оно показывается всегда.
 function UI.Toast( d )
+	if not BAA.cfg.toasts then return end
 	d.left = BAA.TOAST_TIME
 	table.insert( toastData, 1, d )
 	while #toastData > 3 do table.remove( toastData ) end
@@ -542,6 +554,16 @@ function UI.OnAccSwitch( params )
 	local a = i and BAA.ACCS[ i ]
 	if not a then return end
 	BAA.cfg.acc[ a.k ] = not BAA.cfg.acc[ a.k ]
+	UI.Changed()
+end
+
+function UI.OnNotifySwitch()
+	BAA.cfg.toasts = not BAA.cfg.toasts
+	-- выключили — убираем и те уведомления, что уже на экране
+	if not BAA.cfg.toasts then
+		toastData = {}
+		RenderToasts()
+	end
 	UI.Changed()
 end
 
