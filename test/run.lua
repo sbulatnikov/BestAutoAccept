@@ -235,4 +235,22 @@ if BAA.DEBUG ~= nil then
 else
 	assert( BAA.Log == nil and BAA.Probe == nil, "в обычной сборке осталась отладка" )
 end
+-- Форма раньше называлась MainForm: места кнопки и окон, сохранённые LibDnD, переезжают на новое имя формы
+CONFIG.BestAutoAccept = CONFIG.BestAutoAccept or {}
+CONFIG.BestAutoAccept.keepMe = 7
+CONFIG.BestAutoAccept[ "DnD:MainForm.BAAWindow" ] = { posX = 111, posY = 222 }
+CONFIG.BestAutoAccept[ "DnD:MainForm.Twice" ] = { posX = 1 }
+CONFIG.BestAutoAccept[ "DnD:BestAutoAccept.Twice" ] = { posX = 2 }
+BAA.MoveWindowPlaces()
+do
+	local cfg = CONFIG.BestAutoAccept
+	local moved = cfg[ "DnD:BestAutoAccept.BAAWindow" ]
+	assert( mainForm:GetName() == "BestAutoAccept", "форма называется именем аддона" )
+	assert( moved and moved.posX == 111 and moved.posY == 222 and cfg[ "DnD:MainForm.BAAWindow" ] == nil, "место окна переехало на новое имя формы, старый ключ убран" )
+	assert( cfg[ "DnD:BestAutoAccept.Twice" ].posX == 2 and cfg[ "DnD:MainForm.Twice" ] == nil, "место, уже сохранённое под новым именем, не затирается" )
+	assert( cfg.keepMe == 7, "остальные настройки при переносе не тронуты" )
+end
+BAA.MoveWindowPlaces()
+assert( CONFIG.BestAutoAccept[ "DnD:BestAutoAccept.BAAWindow" ].posX == 111, "повторный перенос ничего не меняет" )
+
 print( "\nALL OK" )

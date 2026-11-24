@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 Global( "BAA", {} )
 
-BAA.VERSION = "0.10.3"
+BAA.VERSION = "0.10.4"
 BAA.tick = 0               -- секунды с запуска (EVENT_SECOND_TIMER)
 BAA.NICK_MIN = 3
 BAA.NICK_MAX = 14
@@ -193,4 +193,29 @@ function BAA.SetTex( w, key )
 	if m.tex == key then return end
 	local t = BAA.Tex( key )
 	if t then m.tex = key w:SetBackgroundTexture( t ) end
+end
+
+-- До версии 0.10.4 форма аддона называлась MainForm. LibDnD хранит места кнопки и окон под ключами
+-- «DnD:<имя формы>.<окно>», поэтому после переименования формы переносим их под новое имя:
+-- иначе после обновления кнопка и окна встали бы на места по умолчанию. Вызывается до DnD.Init.
+function BAA.MoveWindowPlaces()
+	local section = common.GetAddonName()
+	local cfg = userMods.GetGlobalConfigSection( section )
+	-- Ожидаем: настроек ещё нет (первый запуск аддона) — переносить нечего
+	if not cfg then return end
+	local oldPrefix = "DnD:MainForm."
+	local newPrefix = "DnD:" .. mainForm:GetName() .. "."
+	local oldKeys = {}
+	for key in pairs( cfg ) do
+		if type( key ) == "string" and string.sub( key, 1, string.len( oldPrefix ) ) == oldPrefix then
+			table.insert( oldKeys, key )
+		end
+	end
+	if #oldKeys == 0 then return end
+	for _, key in ipairs( oldKeys ) do
+		local newKey = newPrefix .. string.sub( key, string.len( oldPrefix ) + 1 )
+		if cfg[ newKey ] == nil then cfg[ newKey ] = cfg[ key ] end
+		cfg[ key ] = nil
+	end
+	userMods.SetGlobalConfigSection( section, cfg )
 end

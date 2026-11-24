@@ -102,6 +102,7 @@ local function Start()
 	BAA.Cfg.Load()
 	UI.Init()
 
+	BAA.MoveWindowPlaces()
 	DnD.Init( BAA.W( "BAAHost" ), BAA.W( "BAAButton" ), true, true )
 	DnD.Init( BAA.W( "BAAWindow" ), BAA.W( "Header" ), true, true )
 	local stop = DnD.StopDragging

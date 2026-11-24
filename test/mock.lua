@@ -65,7 +65,7 @@ function Widget.SetText( w, t ) w.text = t.s end
 function Widget.GetWidgetDesc( w ) return w end
 function Widget.Enable( w, on ) w.enabled = on end
 function Widget.GetInstanceId( w ) return tostring( w ) end
-mainForm = NewW( "MainForm" )
+mainForm = NewW( "BestAutoAccept" )
 function mainForm.CreateChildByDesc( _, d ) return NewW( d.name, mainForm ) end
 
 -- Игра
