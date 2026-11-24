@@ -444,7 +444,7 @@ tv('FollowText', P(12), 0, TW - P(12) - P(96) - P(14), P(44), '../Texts/ToastTex
 X.panel('FollowPrompt', PL(0, P(120 + 42 * 3), TW, P(44), 'WIDGET_ALIGN_CENTER'), back=TOAST_FRAME,
         children=['FollowText.(WidgetTextView).xdb', 'FollowButton.(WidgetButton).xdb'], pick_children=True, visible=False, priority=951)
 
-X.form('MainForm', ['BAAWindow.(WidgetPanel).xdb', 'BAAHost.(WidgetPanel).xdb'] + toasts +
+X.form('BestAutoAccept', ['BAAWindow.(WidgetPanel).xdb', 'BAAHost.(WidgetPanel).xdb'] + toasts +
        ['FollowPrompt.(WidgetPanel).xdb', 'Tooltip.(WidgetPanel).xdb'])
 
 # --- описание аддона
